@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PNR Modern Fare Extractor</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <!-- <style>
+    body { background:#0b0f0d; color:#eaffea; font-family:"Segoe UI", Arial, sans-serif; padding:30px; }
+    h2 { color:#2cff9a; margin-bottom:10px; }
+    textarea { width:100%; height:260px; background:#0f1a14; color:#eaffea; border:1px solid #1f3d2b; border-radius:10px; padding:14px; font-family:monospace; font-size:14px; }
+    button { margin-top:15px; padding:12px 26px; font-size:16px; font-weight:bold; background:linear-gradient(135deg,#2cff9a,#1fa96f); border:none; border-radius:10px; cursor:pointer; color:#001a0f; transition:transform 0.2s ease; }
+    button:hover { transform:scale(1.05); }
+    .card { margin-top:25px; background:#0f1a14; border:1px solid #1f3d2b; border-radius:14px; padding:22px; box-shadow:0 0 25px rgba(44,255,154,0.15); display:none; }
+    .row { margin-bottom:12px; display:flex; align-items:center; }
+    .icon { color:#2cff9a; width:28px; }
+    .label { width:160px; color:#2cff9a; font-weight:bold; }
+    .value { font-family:monospace; font-size:16px; }
+    .money { font-size:18px; font-weight:bold; }
+    .copy-btn { margin-top:18px; background:linear-gradient(135deg,#1fa96f,#2cff9a); color:#002216; }
+    hr { border:1px solid #1f3d2b; margin:18px 0; }
+    .segment { margin-left: 20px; font-family: monospace; font-size: 15px; margin-bottom:4px; }
+  </style> -->
+  <style>
+  body { 
+    background:#0b0f0d; 
+    color:#fff3e0; 
+    font-family:"Segoe UI", Arial, sans-serif; 
+    padding:30px; 
+  }
+
+  h2 { 
+    color:#ff9800; 
+    margin-bottom:10px; 
+  }
+
+  textarea { 
+    width:100%; 
+    height:260px; 
+    background:#1a1208; 
+    color:#fff3e0; 
+    border:1px solid #6d4c1c; 
+    border-radius:10px; 
+    padding:14px; 
+    font-family:monospace; 
+    font-size:14px; 
+  }
+
+  button { 
+    margin-top:15px; 
+    padding:12px 26px; 
+    font-size:16px; 
+    font-weight:bold; 
+    background:linear-gradient(135deg,#ff9800,#ff6f00); 
+    border:none; 
+    border-radius:10px; 
+    cursor:pointer; 
+    color:#2a1400; 
+    transition:transform 0.2s ease; 
+  }
+
+  button:hover { 
+    transform:scale(1.05); 
+  }
+
+  .card { 
+    margin-top:25px; 
+    background:#1a1208; 
+    border:1px solid #6d4c1c; 
+    border-radius:14px; 
+    padding:22px; 
+    box-shadow:0 0 25px rgba(255,152,0,0.25); 
+    display:none; 
+  }
+
+  .row { 
+    margin-bottom:12px; 
+    display:flex; 
+    align-items:center; 
+  }
+
+  .icon { 
+    color:#ff9800; 
+    width:28px; 
+  }
+
+  .label { 
+    width:160px; 
+    color:#ff9800; 
+    font-weight:bold; 
+  }
+
+  .value { 
+    font-family:monospace; 
+    font-size:16px; 
+  }
+
+  .money { 
+    font-size:18px; 
+    font-weight:bold; 
+  }
+
+  .copy-btn { 
+    margin-top:18px; 
+    background:linear-gradient(135deg,#ff6f00,#ff9800); 
+    color:#2a1400; 
+  }
+
+  hr { 
+    border:1px solid #6d4c1c; 
+    margin:18px 0; 
+  }
+
+  .segment { 
+    margin-left:20px; 
+    font-family:monospace; 
+    font-size:15px; 
+    margin-bottom:4px; 
+  }
+</style>
+
+</head>
+<body>
+
+<h2><i class="fa-solid fa-file-lines"></i> Modern PNR Fare Extractor</h2>
+
+<textarea id="inputData" placeholder="Paste full PNR / ticket data here..."></textarea>
+<br>
+<button onclick="extractData()"><i class="fa-solid fa-magnifying-glass"></i> Extract Details</button>
+
+<div class="card" id="outputCard">
+  <h3><i class="fa-solid fa-receipt"></i> Extracted Fare Details</h3>
+
+  <div class="row"><i class="fa-solid fa-ticket icon"></i><span class="label">Ticket Number</span><span class="value" id="ticketLine"></span></div>
+  <div class="row"><i class="fa-solid fa-calendar-days icon"></i><span class="label">Date of Issue</span><span class="value" id="doi"></span></div>
+  <div class="row"><i class="fa-solid fa-user icon"></i><span class="label">Passenger Name</span><span class="value" id="passenger"></span></div>
+
+  <hr>
+
+  <div class="row"><i class="fa-solid fa-plane icon"></i><span class="label">Flight Segments</span></div>
+  <div id="segments"></div>
+
+  <hr>
+
+  <div class="row"><i class="fa-solid fa-dollar-sign icon"></i><span class="label">Fare USD</span><span class="value money" id="usdFare"></span></div>
+  <div class="row"><i class="fa-solid fa-money-bill icon"></i><span class="label">Fare LKR (EQUIV)</span><span class="value money" id="lkrFare"></span></div>
+  <div class="row"><i class="fa-solid fa-percent icon"></i><span class="label">Tax Total LKR</span><span class="value money" id="taxFare"></span></div>
+  <div class="row"><i class="fa-solid fa-sack-dollar icon"></i><span class="label">Total LKR</span><span class="value money" id="totalFare"></span></div>
+
+  <button class="copy-btn" onclick="copyOutput()"><i class="fa-solid fa-copy"></i> Copy Output</button>
+</div>
+
+<script>
+function extractData() {
+  const text = document.getElementById("inputData").value;
+  const lines = text.split("\n").map(l => l.trim()).filter(l => l);
+
+  let ticketLine = "";
+  let doi = "";
+  let passenger = "";
+  let segments = [];
+  let usdFare = "";
+  let lkrFare = 0;
+  let taxFare = 0;
+  let totalFare = 0;
+
+  lines.forEach(line => {
+    if (line.startsWith("TKT-")) ticketLine = line.replace("TKT-","").split(/\s+/)[0];
+
+    if (line.includes("DOI-")) {
+      const doiMatch = line.match(/DOI-([\dA-Z]+)/);
+      if (doiMatch) {
+        const raw = doiMatch[1];
+        doi = raw.slice(0,2) + "-" + raw.slice(2,5) + "-" + raw.slice(5);
+      }
+    }
+
+    if (/^\d+\./.test(line)) {
+      passenger = line.replace(/^\d+\.\s*/,"").replace(/\s+(ADT|ST|CHD|INF|FQTV9.*)$/,"").trim();
+    }
+
+    if (/^\d+\s[O|D|1-9]/.test(line)) {
+      segments.push(line);
+    }
+
+    if (line.startsWith("FARE")) {
+      const match = line.match(/USD\s*([\d.]+)/);
+      if (match) usdFare = match[1];
+    }
+
+    if (line.startsWith("EQUIV")) {
+      const match = line.match(/LKR\s*([\d]+)/);
+      if (match) lkrFare = parseInt(match[1]);
+    }
+
+    if (line.startsWith("TOTALTAX")) {
+      const match = line.match(/LKR\s*([\d]+)/);
+      if (match) taxFare = parseInt(match[1]);
+    }
+
+    if (line.startsWith("TOTAL")) {
+      const match = line.match(/LKR\s*([\d]+)/);
+      if (match) totalFare = parseInt(match[1]);
+    }
+  });
+
+  document.getElementById("ticketLine").textContent = ticketLine || "-";
+  document.getElementById("doi").textContent = doi || "-";
+  document.getElementById("passenger").textContent = passenger || "-";
+
+  const segmentsDiv = document.getElementById("segments");
+  segmentsDiv.innerHTML = "";
+  segments.forEach(s => {
+    const segEl = document.createElement("div");
+    segEl.className = "segment";
+    segEl.textContent = s;
+    segmentsDiv.appendChild(segEl);
+  });
+
+  document.getElementById("usdFare").textContent = usdFare ? `USD ${usdFare}` : "-";
+  document.getElementById("lkrFare").textContent = `LKR ${lkrFare.toLocaleString()}`;
+  document.getElementById("taxFare").textContent = `LKR ${taxFare.toLocaleString()}`;
+  document.getElementById("totalFare").textContent = `LKR ${totalFare.toLocaleString()}`;
+
+  document.getElementById("outputCard").style.display = "block";
+}
+
+function copyOutput() {
+  const ticketLine = document.getElementById("ticketLine").textContent;
+  const doi = document.getElementById("doi").textContent;
+  const passenger = document.getElementById("passenger").textContent;
+  const segments = Array.from(document.querySelectorAll("#segments .segment")).map(s => s.textContent).join("\n");
+  const usdFare = document.getElementById("usdFare").textContent;
+  const lkrFare = document.getElementById("lkrFare").textContent;
+  const taxFare = document.getElementById("taxFare").textContent;
+  const totalFare = document.getElementById("totalFare").textContent;
+
+  const outputText = 
+`Ticket Number: ${ticketLine}
+Date of Issue: ${doi}
+Passenger Name: ${passenger}
+Flight Segments:
+${segments}
+Fare USD: ${usdFare}
+Fare LKR (EQUIV): ${lkrFare}
+Tax Total LKR: ${taxFare}
+Total LKR: ${totalFare}`;
+
+  navigator.clipboard.writeText(outputText)
+    .then(()=>alert("Output copied to clipboard!"))
+    .catch(err=>alert("Failed to copy: " + err));
+}
+</script>
+
+</body>
+</html>
